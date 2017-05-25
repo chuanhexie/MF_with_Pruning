@@ -9,7 +9,7 @@
 using namespace std;
 #define feature_size 32
 #define datasize 8000
-#define STEP 10000
+#define STEP 1000
 #define STEPR 50
 #define ALAPA 0.002
 #define BETA 0.1
@@ -222,18 +222,41 @@ int main() {
     double *Q2 = new double[M*K];
     int *PU = new int[N*K];
 
+    int qcnt=0;
+    for(int i=0; i<N; i++)
+        for(int j=0; j<M; j++)
+            if(R[i*M+j]!=0) {
+                qcnt++;
+            }
+    cout<<qcnt<<endl;
     for(int i=0; i<N; i++)
         for(int j=0; j<M; j++)
             R[i*M+j]=0;
     for(int i=0; i<N; i++)
         for(int j=0; j<M; j++)
             T[i*M+j]=0;
+
+    qcnt=0;
+    for(int i=0; i<N; i++)
+        for(int j=0; j<M; j++)
+            if(R[i*M+j]!=0) {
+                qcnt++;
+            }
+    cout<<qcnt<<endl;
+
     for(int i=0; i<Rlen; i++) {
         R[train[i][0]*M+train[i][1]] = train[i][2];
     }
     for(int i=0; i<Tlen; i++) {
         T[test[i][0]*M+test[i][1]] = test[i][2];
     }
+    qcnt=0;
+    for(int i=0; i<N; i++)
+        for(int j=0; j<M; j++)
+            if(R[i*M+j]!=0) {
+                qcnt++;
+            }
+    cout<<qcnt<<endl;
 
     for(int i=0; i<N; i++)
         B[i]=rand()%10/10.0;
@@ -247,162 +270,33 @@ int main() {
     for(int i=0; i<K; ++i)
         for(int j=0; j<M; ++j)
             Q[i*M+j]=rand()%10/10.0;
+            qcnt=0;
+    for(int i=0; i<N; i++)
+        for(int j=0; j<M; j++)
+            if(R[i*M+j]!=0) {
+                qcnt++;
+            }
+    cout<<qcnt<<endl;
 
     matrix_factorization(R,B,C,P,Q,N,M,K); // 初次进行矩阵分解得到最初的结果
 
     cout<<"train-set RMSE: "<<cal_rmse(R,B,C,P,Q,N,M,K,Rlen)<<endl;
     print_rst(T,B,C,P,Q,N,M,K,Tlen);
 
-    /*int kkk=0;
-    for(int i=0;i<N;i++) if(cal_user_error(R,B,C,P,Q,N,M,K,i)){
-    kkk++;
-    }cout<<kkk<<endl;*/
-
-    /*cout<<"\n\n\nP P P P\n";
-    for(int i=0; i<N; ++i) {
-        cout<<(i/1000)%10<<(i/100)%10<<(i/10)%10<<i%10<<": ";
-        for(int j=0; j<K; ++j)
-            cout<<setprecision(4)<<(char)((B[i]+P[i*K+j]<0)?7:32)<<fixed<<B[i]+P[i*K+j]<<' ';
-        cout<<endl;
-    }*/
-
-
-//  ----------------------------------------------Purning------------------------------------------------------------
-
-    int gg=0,cnt=0;
-    int min=10,x=0,y=0;
-    double lossr=0;
-
-    while(gg++<((N+M)*K*1)) {
-        // lossr=cal_rmse(R,B,P,Q,N,M,K,Rlen);
-        /*min=10;
-        for(int i=0; i<N*K; i++) {
-            P2[i] = P[i];
-            if(!PU[i] && min>abs(P[i]-MINP)) {// 寻找P中未重复出现过的最小值位置
-                min=abs(P[i]-MINP);
-                x=i;
+    int cnt=0,Rcnt=0;
+    for(int i=0; i<N; i++)
+        for(int j=0; j<M; j++)
+            if(T[i*M+j]!=0) {
+                double error = B[i] + C[j];
+                for (int k=0; k<K; ++k)
+                    error += P[i*K+k] * Q[j*K+k];
+                Rcnt++;
+                if(abs(T[i*M+j]-error) > 0.5) cnt++;
             }
-        }*/
-
-        // lossr = cal_error(R,B2,C2,P2,Q2,N,M,K,x/K);
-        // matrix_recounstruction(R,B2,P2,Q2,N,M,K); // 将修改后的B2,P2,Q2代入去迭代
-        // if(lossr = cal_error(R,B2,C2,P2,Q2,N,M,K,x/K)<lossr*1.05) { // 观察rmse变化情况，若增加太多则不改变
+    cout<<Rcnt<<endl<<cnt<<endl<<Tlen<<endl;
+    cout<<(Tlen-cnt)*1.0/Tlen<<endl;
 
 
-        int a=0,b=0;
-        while(a++<5) {
-            for(int i=0; i<N*K; i++) P2[i] = P[i];
-            for(int i=0; i<N; i++) B2[i] = B[i];
-            x = rand()%(N*K);
-            while(P2[x] == MINP)
-                x = rand()%(N*K);
-            P2[x] = MINP;
-            user_vector_reconstruction(R,B2,C,P2,Q,N,M,K,x/K);
-            if(cal_user_error(R,B2,C,P2,Q,N,M,K,x/K)) {
-                for(int i=0; i<N*K; i++) P[i]=P2[i];
-                for(int i=0; i<N; i++) B[i]=B2[i];
-                cnt++;
-            }
-        }
-
-        while(b++<5) {
-            for(int i=0; i<M*K; i++) Q2[i] = Q[i];
-            for(int i=0; i<M; i++) C2[i] = C[i];
-            y = rand()%(M*K);
-            while(Q2[y] == MINP)
-                y = rand()%(M*K);
-            Q2[y] = MINP;
-            item_vector_reconstruction(R,B,C2,P,Q2,N,M,K,y/K);
-            if(cal_item_error(R,B,C2,P,Q2,N,M,K,y/K)) {
-                for(int i=0; i<M*K; i++) Q[i]=Q2[i];
-                for(int i=0; i<M; i++) C[i]=C2[i];
-                cnt++;
-            }
-        }
-    }
-    cout<<"\nPurning:\n"<<N*M*K/100<<' '<<gg<<' '<<cnt*1.0/(N*K+M*K)<<endl;
-    cout<<"train-set RMSE: "<<cal_rmse(R,B,C,P,Q,N,M,K,Rlen)<<endl;
-    print_rst(T,B,C,P,Q,N,M,K,Tlen);
-
-    /*kkk=0;
-    for(int i=0;i<N;i++) if(cal_user_error(R,B,C,P,Q,N,M,K,i)){
-        kkk++;
-    }cout<<kkk<<endl;*/
-
-    /*
-                    if(P[i*K+j]!=0 && !PU[i*K+j] && min>abs(P[i*K+j])) {// 寻找Q中未重复出现过的最小值位置
-                        min=Q[i*K+j];
-                        x=i;
-                        y=j;
-                    }*/
-
-//  ----------------------------------------------Depurning------------------------------------------------------------
-    /*for(int i=0;i<N*K;i++){
-        P[i]=PO[i];
-        PU[i]=0;
-    }
-    for(int i=0;i<M*K;i++)
-        Q[i]=QO[i];
-    gg=0,cnt=0;
-    lossr = 0;
-    while(gg++<N*K/2) {
-        lossr=cal_rmse(R,P,Q,N,M,K);
-        int max=-1,x=0,y=0;
-        for(int i=0; i<N; i++)
-            for(int j=0; j<K; j++) {
-                P2[i*K+j] = P[i*K+j];
-                if(!PU[i*K+j] && max<P[i*K+j]) {// 寻找P中未重复出现过的最大值位置
-                    max=P[i*K+j];
-                    x=i;
-                    y=j;
-                }
-            }
-        for(int i=0; i<M; i++)
-            for(int j=0; j<K; j++) {
-                Q2[i*K+j] = Q[i*K+j];
-            }
-        if(abs(max)<PMAX) break;
-        P2[x*K+y] = PMAX;
-        PU[x*K+y] = 1;
-        matrix_recounstruction1(R,P2,Q2,N,M,K); // 将修改后的P2代入去迭代
-        if(cal_rmse(R,P2,Q2,N,M,K)<lossr*1.2) { // 观察rmse变化情况，若增加太多则不改变
-            for(int q=0; q<N*K; q++) P[q]=P2[q];
-            for(int q=0; q<M*K; q++) Q[q]=Q2[q];
-            cnt++;
-        }    }
-    cout<<"Depurning:\n"<<N*K<<' '<<gg<<' '<<cnt<<endl;
-    cout<<"train-set RMSE: "<<cal_rmse(R,P,Q,N,M,K)/Rlen<<endl;
-    print_rst( T, P, Q, N, M, K, Tlen);*/
-
-    /*cout<<"\n\n\nB B B B\n";
-    for(int i=0; i<N; ++i) {
-        cout<<(i/1000)%10<<(i/100)%10<<(i/10)%10<<i%10<<": ";
-        cout<<setprecision(4)<<(char)((B[i]<0)?7:32)<<fixed<<B[i]<<endl;
-    }*/
-
-    /*cout<<"\n\n\nP P P P\n";
-    for(int i=0; i<N; ++i) {
-        cout<<(i/1000)%10<<(i/100)%10<<(i/10)%10<<i%10<<": ";
-        for(int j=0; j<K; ++j)
-            cout<<setprecision(4)<<(char)((B[i]+P[i*K+j]<0)?7:32)<<fixed<<B[i]+P[i*K+j]<<' ';
-        cout<<endl;
-    }*/
-
-    /*cout<<"\n\n\nQ Q Q Q\n";
-    for(int i=0; i<M; ++i) {
-        cout<<(i/1000)%10<<(i/100)%10<<(i/10)%10<<i%10<<": ";
-        for(int j=0; j<K; ++j)
-            cout<<setprecision(4)<<(char)((Q[i*K+j]<0)?7:32)<<fixed<<Q[i*K+j]<<' ';
-        cout<<endl;
-    }*/
-
-    /*int cnt4pu=0;
-    for(int i=0;i<N*K;i++) if(PU[i]==1) cnt4pu++;
-    cout<<gg<<' '<<cnt4pu<<endl;
-    int qa,qb;
-    while(cin>>qa>>qb){
-        cout<<PU[qa*K+qb]<<endl;
-    }*/
     delete [] B,B2,C,C2,P, P2, PU, Q, Q2, R, T;
     system("pause");
     return 0;

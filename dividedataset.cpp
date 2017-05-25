@@ -36,7 +36,7 @@ int main() {
         ss << buffer;
         ss>>a>>b>>c;
         ss.clear();
-        if (rand()%10>0) {
+        if (rand()%70>0) {
             of1<<buffer<<endl;
             Rlen++;
         }
