@@ -17,6 +17,8 @@ using namespace std;
 #define MINP 0.0
 #define PMAX 0.6
 
+// another try
+
 int Rlen=0,Tlen=0;
 
 double cal_rmse(const double *R,const double *B,const double *C,const double *P,const double *Q,int N,int M,int K,int L) {
